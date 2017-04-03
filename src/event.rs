@@ -74,6 +74,6 @@ module.exports = (call, options, done) => {
 */
 
 pub struct Event<'a> {
-	pub sequence: &'a String,
-	pub role: &'a String
+	pub sequence: &'a str,
+	pub role: &'a str
 }
