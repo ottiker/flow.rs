@@ -43,7 +43,8 @@ fn emit <'a>(adapter: &'static Adapter, sequence_id: &'a str, role: &'a str) -> 
 	*/
 
 	// TODO how to get the reference to the adapter
-	<Adapter as TAdapter>::get(&adapter, sequence_id);
+	Adapter::get(&adapter, sequence_id);
+	//<Adapter as TAdapter>::get(&adapter, sequence_id);
 
 
 	Event {
