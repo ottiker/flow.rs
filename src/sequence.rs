@@ -90,10 +90,7 @@ function getState (adapter, state_id) {
 }
 */
 
-pub struct Sequence {
-	
-}
+pub struct Sequence {}
+pub struct State {}
+pub struct Handler {}
 
-pub fn create() -> Sequence {
-	Sequence {}
-}
