@@ -6,15 +6,15 @@ mod emit;
 use event::Event;
 use sequence::{Sequence, Handler, State};
 
-pub trait Adapter<T> {
-	fn set<'a, A>(key: &str, val: &'a A) -> &'a A;
+pub trait Adapter<A> {
+	fn set<'a, T>(key: &str, val: &'a T) -> &'a T;
 	fn get<'a>(&self, key: &str);
 	fn del<'a>(key: &str);
 	fn seq(key: &str);
 	fn fnc(key: &str);
 }
 
-pub fn Flow<'a, Adapter: 'static>(adapter: Adapter) -> Box<Fn(&'a str, &'a str) -> Event<'a>> {
+pub fn Flow<'a, A, T: Adapter<A>>(adapter: &'static Box<T>) -> Box<Fn(&'a str, &'a str) -> Event<'a>> {
 
 	/* js code:
 	if (!adapter.cache || !adapter.seq || !adapter.fn) {
@@ -22,11 +22,13 @@ pub fn Flow<'a, Adapter: 'static>(adapter: Adapter) -> Box<Fn(&'a str, &'a str) 
 	}
 	*/
 	// TODO how to make adapter available in the closure?
+	//let seq_id = "hoi";
+	//adapter.get(&seq_id);
 
-	Box::new(move |sequence_id, role| emit(&adapter, sequence_id, role))
+	Box::new(move |sequence_id, role| emit(adapter, sequence_id, role))
 }
 
-fn emit<'a, Adapter: 'static>(adapter: &Adapter, sequence_id: &'a str, role: &'a str) -> Event<'a> {
+fn emit<'a, A, T: Adapter<A>>(adapter: &'static Box<T>, sequence_id: &'a str, role: &'a str) -> Event<'a> {
 
 	/* js code:
 		const event = Event(call, options, done);
@@ -40,7 +42,6 @@ fn emit<'a, Adapter: 'static>(adapter: &Adapter, sequence_id: &'a str, role: &'a
 	*/
 
 	// TODO how to get the reference to the adapter
-	//adapter.get(sequence_id);
 
 	Event {
 		sequence: sequence_id,
