@@ -7,14 +7,14 @@ use event::Event;
 use sequence::{Sequence, Handler, State};
 
 pub trait Adapter<A> {
-	fn set<'a, T>(key: &str, val: &'a T) -> &'a T;
+	fn set<'a, T>(&self, key: &str, val: &'a T) -> &'a T;
 	fn get<'a>(&self, key: &str);
-	fn del<'a>(key: &str);
+	fn del<'a>(&self, key: &str);
 	fn seq(key: &str);
 	fn fnc(key: &str);
 }
 
-pub fn Flow<'a, 'b, A, T: Adapter<A>>(adapter: &'a Box<T>) -> Box<Fn(&'b str, &'b str) -> Event<'b> + 'a> {
+pub fn Flow<'a, 'b, A, T: Adapter<A> + 'a>(adapter: Box<T>) -> Box<Fn(&'b str, &'b str) -> Event<'b> + 'a> {
 
 	/* js code:
 	if (!adapter.cache || !adapter.seq || !adapter.fn) {
@@ -22,7 +22,7 @@ pub fn Flow<'a, 'b, A, T: Adapter<A>>(adapter: &'a Box<T>) -> Box<Fn(&'b str, &'
 	}
 	*/
 
-	Box::new(move |sequence_id, role| emit(adapter, sequence_id, role))
+	Box::new(move |sequence_id, role| emit(&adapter, sequence_id, role))
 }
 
 fn emit<'a, 'b, A, T: Adapter<A>>(adapter: &'a Box<T>, sequence_id: &'b str, role: &'b str) -> Event<'b> {
