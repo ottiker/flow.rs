@@ -6,29 +6,26 @@ mod emit;
 use event::Event;
 use sequence::{Sequence, Handler, State};
 
-pub trait Adapter<'a, A> {
-	fn set<'b, T>(key: &str, val: &'b T) -> &'b T;
-	fn get<'b>(&self, key: &str);
-	fn del<'b>(key: &str);
+pub trait Adapter<A> {
+	fn set<'a, T>(key: &str, val: &'a T) -> &'a T;
+	fn get<'a>(&self, key: &str);
+	fn del<'a>(key: &str);
 	fn seq(key: &str);
 	fn fnc(key: &str);
 }
 
-pub fn Flow<'a, A, T: Adapter<'a, A>>(adapter: &'a Box<T>) /*-> Box<Fn(&'a str, &'a str) -> Event<'a>> */{
+pub fn Flow<'a, 'b, A, T: Adapter<A>>(adapter: &'a Box<T>) -> Box<Fn(&'b str, &'b str) -> Event<'b> + 'a> {
 
 	/* js code:
 	if (!adapter.cache || !adapter.seq || !adapter.fn) {
 		throw new Error("Flow: Invalid adapter.");
 	}
 	*/
-	// TODO how to make adapter available in the closure?
-	//let seq_id = "hoi";
-	//adapter.get(&seq_id);
 
-	//Box::new(move |sequence_id, role| emit(adapter, sequence_id, role))
+	Box::new(move |sequence_id, role| emit(adapter, sequence_id, role))
 }
 
-fn emit<'a, A, T: Adapter<'a, A>>(adapter: &'a Box<T>, sequence_id: &'a str, role: &'a str) -> Event<'a> {
+fn emit<'a, 'b, A, T: Adapter<A>>(adapter: &'a Box<T>, sequence_id: &'b str, role: &'b str) -> Event<'b> {
 
 	/* js code:
 		const event = Event(call, options, done);
@@ -41,7 +38,8 @@ fn emit<'a, A, T: Adapter<'a, A>>(adapter: &'a Box<T>, sequence_id: &'a str, rol
 		return event;
 	*/
 
-	// TODO how to get the reference to the adapter
+	// adpater call test
+	adapter.get(sequence_id);
 
 	Event {
 		sequence: sequence_id,
