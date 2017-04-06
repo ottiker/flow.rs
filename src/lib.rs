@@ -1,15 +1,16 @@
 
-mod event;
 pub mod sequence;
+mod event;
 mod emit;
 
 use event::Event;
 use sequence::{Sequence, Handler, State};
 
 pub trait Adapter<A> {
+	fn new(size: usize) -> Box<A>;
 	fn set<'a, T>(&self, key: &str, val: &'a T) -> &'a T;
-	fn get<'a>(&self, key: &str);
-	fn del<'a>(&self, key: &str);
+	fn get(&self, key: &str);
+	fn del(&self, key: &str);
 	fn seq(key: &str);
 	fn fnc(key: &str);
 }
