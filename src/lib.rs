@@ -2,45 +2,83 @@
 extern crate futures;
 
 use std::error::Error;
+use std::fmt;
 use std::collections::HashMap;
 use futures::prelude::*;
 use futures::future::ok;
 use futures::future::FutureResult;
 
 #[derive(Debug)]
-pub struct Flow {
-    sequences: HashMap<String, Sequence>,
-    handlers: HashMap<String, Handler>,
+pub struct FlowError<'e> {
+    message: &'e str
 }
 
-impl Flow {
+impl <'e>FlowError<'e> {
+    fn new (message: &'e str) -> FlowError {
+        FlowError {
+            message: message
+        }
+    }
+}
 
-    // emit a sequence, if the sequence doesn't exists it will be built and then emitted.
-    fn emit(&mut self, sequence_uri: String) -> FutureResult<Sequence, Box<Error>> {
+impl <'e>fmt::Display for FlowError<'e> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Flow error:")
+    }
+}
 
-        // TODO execute this future on reactor
-        (match self.sequences.get(&sequence_uri) {
-
-            // sequence exists in cache
-            Some(sequence) => ok(sequence),
-
-            // sequence doesn't exists in the cache, thus build the sequence
-            None => {
-
-                // TODO load sequence load(sequence_uri).then
-                // TODO this is async!
-                let sequence = Sequence::build(sequence_uri);
-                self.sequences.insert(sequence_uri, sequence);
-                ok(sequence)
-            }
-        })//.and_then(|sequence| {
-            //sequence.start()
-        //})//.wait()
+impl <'e>Error for FlowError<'e> {
+    fn description(&self) -> &str {
+        self.message
     }
 }
 
 #[derive(Debug)]
-struct Sequence {
+pub struct Flow<'k> {
+    sequences: HashMap<&'k str, Sequence>,
+    handlers: HashMap<&'k str, Handler>,
+}
+
+impl <'k>Flow<'k> {
+
+    pub fn emit (&mut self, uri: &'k str) -> Result<&Sequence, FlowError> {
+
+        // get sequence (FutureResult)
+        //  - in cache future::ok(sequence)
+        if self.sequences.contains_key(uri) {
+            return match self.sequences.get(uri) {
+                Some(sequence) => Ok(sequence),
+                None => Err(FlowError::new("hu?")),
+            };
+        }
+
+        println!("Sequence {:?} not in cache.", uri);
+        // TODO load sequence load(sequence_uri).then
+
+        //let key = uri.to_owned();
+        let name = uri.to_owned();
+        match self.sequences.insert(uri, Sequence::build(name)) {
+            Some(sequence) => {
+                // this is the replaced sequence! error?
+                Err(FlowError::new("Sequence was already in cache!"))
+            },
+
+            None => {
+
+                match self.sequences.get(uri) {
+                    Some(sequence) => Ok(sequence),
+                    None => {
+                        // error
+                        Err(FlowError::new("Sequence not in cache."))
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Sequence {
     uri: String,
     done: bool,
     //seq: Vec<Handler>,
@@ -131,7 +169,7 @@ impl Future for Handler {
     }
 }
 
-pub fn new () -> Flow {
+pub fn new<'k> () -> Flow<'k> {
 
     // TODO add sequence loader
     // TODO add handler loader
