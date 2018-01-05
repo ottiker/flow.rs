@@ -5,8 +5,7 @@ use std::error::Error;
 use std::fmt;
 use std::collections::HashMap;
 use futures::prelude::*;
-use futures::future::ok;
-use futures::future::FutureResult;
+use futures::future::{FutureResult, ok, err};
 
 #[derive(Debug)]
 pub struct FlowError<'e> {
@@ -41,14 +40,14 @@ pub struct Flow<'k> {
 
 impl <'k>Flow<'k> {
 
-    pub fn emit (&mut self, uri: &'k str) -> Result<&Sequence, FlowError> {
+    pub fn emit (&mut self, uri: &'k str) -> FutureResult<&Sequence, FlowError> {
 
         // get sequence (FutureResult)
         //  - in cache future::ok(sequence)
         if self.sequences.contains_key(uri) {
             return match self.sequences.get(uri) {
-                Some(sequence) => Ok(sequence),
-                None => Err(FlowError::new("hu?")),
+                Some(sequence) => ok(sequence),
+                None => err(FlowError::new("hu?")),
             };
         }
 
@@ -60,16 +59,16 @@ impl <'k>Flow<'k> {
         match self.sequences.insert(uri, Sequence::build(name)) {
             Some(sequence) => {
                 // this is the replaced sequence! error?
-                Err(FlowError::new("Sequence was already in cache!"))
+                err(FlowError::new("Sequence was already in cache!"))
             },
 
             None => {
 
                 match self.sequences.get(uri) {
-                    Some(sequence) => Ok(sequence),
+                    Some(sequence) => ok(sequence),
                     None => {
                         // error
-                        Err(FlowError::new("Sequence not in cache."))
+                        err(FlowError::new("Sequence not in cache."))
                     }
                 }
             }
